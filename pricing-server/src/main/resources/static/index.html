@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing Service Frontend</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+<div class="max-w-6xl mx-auto p-5">
+    <h1 class="text-3xl font-bold mb-5">Pricing Service</h1>
+    <div>
+        <h2 class="text-xl font-semibold">Rules List</h2>
+        <button onclick="listRules()" class="py-2 px-4 my-3 bg-purple-500 text-white rounded hover:bg-purple-600">Fetch Rules</button>
+        <table id="rulesList" class="min-w-full divide-y divide-gray-200 mt-3 hidden border-collapse border border-gray-400">
+            <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-400">Namespace</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-400">Description</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-400">Condition</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-400">Action</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-400">Terminal Rule</th>
+            </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200"></tbody>
+        </table>
+    </div>
+    <div class="mt-8">
+        <h2 class="text-xl font-semibold mb-5">Get Pricing</h2>
+        <form id="pricingForm" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <div class="mb-4">
+                <label for="firstName" class="block text-gray-700 text-sm font-bold mb-2">First Name:</label>
+                <input type="text" id="firstName" placeholder="First Name" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+            </div>
+            <div class="mb-4">
+                <label for="lastName" class="block text-gray-700 text-sm font-bold mb-2">Last Name:</label>
+                <input type="text" id="lastName" placeholder="Last Name" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+            </div>
+            <div class="mb-4">
+                <label for="age" class="block text-gray-700 text-sm font-bold mb-2">Age:</label>
+                <input type="number" id="age" placeholder="Age" min="5" max="100" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+            </div>
+            <div class="mb-4">
+                <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                <input type="email" id="email" placeholder="Email" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+            </div>
+            <div class="mb-4">
+                <label for="pinCode" class="block text-gray-700 text-sm font-bold mb-2">Pin Code:</label>
+                <input type="text" id="pinCode" placeholder="Pin Code" required pattern="\d{5,6}" title="Five or six digit pin code" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+            </div>
+            <div class="mb-4">
+                <label for="employmentType" class="block text-gray-700 text-sm font-bold mb-2">Employment Type:</label>
+                <select id="employmentType" required class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">Select Employment Type</option>
+                    <option value="SALARIED">Salaried</option>
+                    <option value="SELF_EMPLOYED">Self-employed</option>
+                    <option value="STUDENT">Student</option>
+                    <option value="RETIRED">Retired</option>
+                    <option value="CONTRACTOR">Contractor</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="cibilScore" class="block text-gray-700 text-sm font-bold mb-2">CIBIL Score (100-900):</label>
+                <input type="number" id="cibilScore" placeholder="CIBIL Score" min="100" max="900" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+            </div>
+            <div class="mb-4">
+                <label for="monthlyIncome" class="block text-gray-700 text-sm font-bold mb-2">Monthly Income: (1000-1000000)</label>
+                <input type="number" id="monthlyIncome" placeholder="Monthly Income" min="0" max="1000000" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+            </div>
+            <button type="submit" class="mt-4 w-full bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Get Pricing</button>
+        </form>
+
+    </div>
+    <div id="pricingResult" class="mt-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 hidden"></div>
+</div>
+
+<script>
+    document.getElementById('pricingForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the default form submission// Check form validity before proceeding
+        getPricing();
+    });
+
+    function listRules() {
+        fetch('/api/v1/rules')
+            .then(response => response.json())
+            .then(data => {
+                const table = document.getElementById('rulesList');
+                const tbody = table.getElementsByTagName('tbody')[0];
+                tbody.innerHTML = '';
+                data.forEach(rule => {
+                    let row = tbody.insertRow();
+                    row.classList.add("border", "border-gray-400"); // Add border classes to each row
+
+                    let cellNamespace = row.insertCell(0);
+                    let cellDescription = row.insertCell(1);
+                    let cellCondition = row.insertCell(2);
+                    let cellAction = row.insertCell(3);
+                    let cellIsTerminal = row.insertCell(4);
+
+                    // Apply border classes for each cell
+                    [cellNamespace, cellDescription, cellCondition, cellAction, cellIsTerminal].forEach(cell => {
+                        cell.classList.add("border", "border-gray-300", "px-4", "py-2", "text-gray-600");
+                    });
+
+                    cellNamespace.textContent = rule.namespace;
+                    cellDescription.textContent = rule.description;
+                    cellCondition.textContent = rule.condition;
+                    cellAction.textContent = rule.action;
+                    cellIsTerminal.textContent = rule.terminal ? 'Yes' : 'No';
+                });
+                table.classList.remove('hidden');
+            })
+            .catch(error => console.error('Error listing rules:', error));
+    }
+
+
+    function getPricing() {
+        const form = document.getElementById('pricingForm');
+        const formData = {
+            firstName: form.firstName.value,
+            lastName: form.lastName.value,
+            age: parseInt(form.age.value, 10),
+            email: form.email.value,
+            pinCode: form.pinCode.value,
+            employmentType: form.employmentType.value,
+            cibilScore: parseFloat(form.cibilScore.value),
+            monthlyIncome: parseFloat(form.monthlyIncome.value)
+        };
+
+        fetch('/api/v1/pricing', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('pricingResult');
+                resultDiv.innerHTML = ''; // Clear previous content
+                resultDiv.classList.remove('hidden');
+
+                if (!data.approvalStatus) {
+                    resultDiv.innerHTML = `<p class="text-lg text-red-500">Sorry, you didn't get a loan.</p><p class="text-sm text-gray-600">Reason: ${data.rejectionReason}</p>`;
+                } else {
+                    const infoHtml = `
+                <p class="text-lg text-green-500">Congratulations, your loan is approved!</p>
+                <ul class="mt-3 list-disc list-inside">
+                    <li>Principal: ${data.principal} <span class="text-gray-500 text-sm">(The total amount of money you're borrowing.)</span></li>
+                    <li>Interest Rate: ${data.interestRate}% <span class="text-gray-500 text-sm">(The percentage charged on your loan.)</span></li>
+                    <li>Tenure: ${data.tenureInMonths} months <span class="text-gray-500 text-sm">(The duration over which you'll repay the loan.)</span></li>
+                    <li>Processing Fee: ${data.processingFee} <span class="text-gray-500 text-sm">(One-time percentage fee charged by the lender to process your loan.)</span></li>
+                    ${data.firstEmiDate ? `<li>First EMI Date: ${data.firstEmiDate} <span class="text-gray-500 text-sm">(The date your first EMI is due.)</span></li>` : ''}
+                </ul>
+            `;
+                    resultDiv.innerHTML = infoHtml;
+                }
+            })
+            .catch(error => {
+                console.error('Error getting pricing:', error);
+                document.getElementById('pricingResult').innerHTML = `<p class="text-lg text-red-500">An error occurred while processing your request.</p>`;
+            });
+    }
+
+</script>
+
+</body>
+</html>
